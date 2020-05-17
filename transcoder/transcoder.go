@@ -74,8 +74,7 @@ func (t Transcoder) FFprobeExec() string {
 // GetCommand Build and get command
 func (t Transcoder) GetCommand() []string {
 	media := t.mediafile
-	rcommand := append([]string{"-y"}, media.ToStrCommand()...)
-	return rcommand
+	return media.ToStrCommand()
 }
 
 // InitializeEmptyTranscoder initializes the fields necessary for a blank transcoder
@@ -109,6 +108,7 @@ func (t *Transcoder) SetInputPath(inputPath string) error {
 	return nil
 }
 
+/*
 // SetOutputPath sets the output path for transcoding
 func (t *Transcoder) SetOutputPath(inputPath string) error {
 	if t.mediafile.OutputPipe() {
@@ -117,6 +117,7 @@ func (t *Transcoder) SetOutputPath(inputPath string) error {
 	t.mediafile.SetOutputPath(inputPath)
 	return nil
 }
+*/
 
 // CreateInputPipe creates an input pipe for the transcoding process
 func (t *Transcoder) CreateInputPipe() (*io.PipeWriter, error) {
@@ -130,13 +131,14 @@ func (t *Transcoder) CreateInputPipe() (*io.PipeWriter, error) {
 	return inputPipeWriter, nil
 }
 
+/*
 // CreateOutputPipe creates an output pipe for the transcoding process
 func (t *Transcoder) CreateOutputPipe(containerFormat string) (*io.PipeReader, error) {
-	if t.mediafile.OutputPath() != "" {
+	if len(t.mediafile.OutputFiles()) > 0 {
 		return nil, errors.New("cannot set an output pipe when an output path exists")
 	}
-	t.mediafile.SetOutputFormat(containerFormat)
 
+	t.mediafile.SetOutputFormat(containerFormat)
 	t.mediafile.SetMovFlags("frag_keyframe")
 	outputPipeReader, outputPipeWriter := io.Pipe()
 	t.mediafile.SetOutputPipe(true)
@@ -144,9 +146,10 @@ func (t *Transcoder) CreateOutputPipe(containerFormat string) (*io.PipeReader, e
 	t.mediafile.SetOutputPipeWriter(outputPipeWriter)
 	return outputPipeReader, nil
 }
+*/
 
 // Initialize Init the transcoding process
-func (t *Transcoder) Initialize(inputPath string, outputPath string) error {
+func (t *Transcoder) Initialize(inputPath string) error {
 	var err error
 	var outb, errb bytes.Buffer
 	var Metadata models.Metadata
@@ -183,7 +186,6 @@ func (t *Transcoder) Initialize(inputPath string, outputPath string) error {
 	MediaFile := new(models.Mediafile)
 	MediaFile.SetMetadata(Metadata)
 	MediaFile.SetInputPath(inputPath)
-	MediaFile.SetOutputPath(outputPath)
 
 	// Set transcoder configuration
 	t.SetMediaFile(MediaFile)
@@ -224,7 +226,6 @@ func (t *Transcoder) Run(progress bool) <-chan error {
 	var outb, errb bytes.Buffer
 	if progress {
 		proc.Stdout = &outb
-		proc.Stderr = &errb
 	}
 
 	// If an input pipe has been set, we set it as stdin for the transcoding
@@ -374,7 +375,6 @@ func (t *Transcoder) closePipes() {
 	if t.mediafile.InputPipe() {
 		t.mediafile.InputPipeReader().Close()
 	}
-	if t.mediafile.OutputPipe() {
-		t.mediafile.OutputPipeWriter().Close()
-	}
+
+	t.mediafile.Close()
 }
